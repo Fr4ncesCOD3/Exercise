@@ -21,7 +21,7 @@ public class Author {
     @Column(nullable = false)
     private String cognome;
     
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
     
     private LocalDate dataDiNascita;

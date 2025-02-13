@@ -9,18 +9,18 @@ server.port=8080
 # - jdbc:postgresql:// -> tipo di database
 # - localhost:5432 -> indirizzo e porta del server database
 # - /Blog -> nome del database
-spring.datasource.url=${USER_URL}
+spring.datasource.url=jdbc:postgresql://localhost:5432/Blog
 
 # Credenziali per accedere al database
-spring.datasource.username=${USER_NAME}
-spring.datasource.password=${USER_PWD}
+spring.datasource.username=postgres
+spring.datasource.password=Epicode175
 
 # Driver JDBC per PostgreSQL - permette a Java di comunicare con PostgreSQL
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # Configurazione JPA/Hibernate (il framework che gestisce il database)
 # update -> aggiorna automaticamente la struttura del database quando necessario
-spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.hibernate.ddl-auto=update
 
 # Mostra le query SQL generate da Hibernate nella console (utile per debug)
 spring.jpa.show-sql=true
