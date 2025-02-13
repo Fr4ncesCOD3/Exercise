@@ -15,11 +15,20 @@ public class Author {
     private Long id;
     
     // Questi sono i campi base che descrivono un autore
+    @Column(nullable = false)
     private String nome;
+    
+    @Column(nullable = false)
     private String cognome;
+    
+    @Column(nullable = false)
     private String email;
+    
     private LocalDate dataDiNascita;
     private String avatar;
+    
+    @Column(nullable = false)
+    private String password;
 
     // Costruttore di default che viene chiamato quando creiamo un nuovo autore
     // Inizializza l'avatar usando il metodo generateAvatar
@@ -91,5 +100,13 @@ public class Author {
     // Getter per l'avatar - nota che non c'è un setter perché l'avatar viene generato automaticamente
     public String getAvatar() {
         return avatar;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 } 

@@ -1,64 +1,96 @@
 package com.example.demo.controllers;
 
+import com.example.demo.entities.Author;
 import com.example.demo.entities.BlogPost;
+import com.example.demo.exceptions.NotFoundException;
+import com.example.demo.payload.BlogPostPayload;
+import com.example.demo.repositories.AuthorRepository;
 import com.example.demo.repositories.BlogPostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-// Questa classe è un controller REST che gestisce le operazioni CRUD per i post del blog
+// Controller per gestire le operazioni CRUD dei post del blog
 @RestController
-@RequestMapping("/blogPosts") // Tutte le richieste a /blogPosts verranno gestite da questo controller
+@RequestMapping("/blogPosts")
 public class BlogPostController {
     
-    // Inietta automaticamente un'istanza del repository per interagire con il database
     @Autowired
     private BlogPostRepository blogPostRepository;
+    
+    @Autowired
+    private AuthorRepository authorRepository;
 
-    // Gestisce le richieste GET a /blogPosts
-    // Restituisce tutti i post del blog presenti nel database
+    // Restituisce tutti i post con paginazione
     @GetMapping
-    public List<BlogPost> getAllPosts() {
-        return blogPostRepository.findAll();
+    public Page<BlogPost> getAllPosts(@PageableDefault(size = 10, sort = "dataCreazione") Pageable pageable) {
+        return blogPostRepository.findAll(pageable);
     }
 
-    // Gestisce le richieste GET a /blogPosts/{id}
-    // Restituisce un singolo post in base all'ID specificato nel percorso URL
+    // Restituisce un singolo post per ID
     @GetMapping("/{id}")
     public ResponseEntity<BlogPost> getPost(@PathVariable Long id) {
-        return blogPostRepository.findById(id)
-                .map(ResponseEntity::ok) // Se il post viene trovato, restituisce 200 OK con il post
-                .orElse(ResponseEntity.notFound().build()); // Se non trovato, restituisce 404 Not Found
+        return ResponseEntity.ok(blogPostRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Post non trovato con id: " + id)));
     }
 
-    // Gestisce le richieste POST a /blogPosts
-    // Crea un nuovo post del blog con i dati forniti nel corpo della richiesta
+    // Crea un nuovo post
     @PostMapping
-    public BlogPost createPost(@RequestBody BlogPost blogPost) {
+    public BlogPost createPost(@RequestBody BlogPostPayload payload) {
+        Author author = authorRepository.findById(payload.getAutoreId())
+                .orElseThrow(() -> new NotFoundException("Autore non trovato con id: " + payload.getAutoreId()));
+        
+        // Verifica che l'autore sia autenticato (in produzione usare Spring Security)
+        if (author == null) {
+            throw new IllegalArgumentException("Devi essere autenticato per creare un post");
+        }
+        
+        BlogPost blogPost = new BlogPost();
+        blogPost.setCategoria(payload.getCategoria());
+        blogPost.setTitolo(payload.getTitolo());
+        blogPost.setContenuto(payload.getContenuto());
+        blogPost.setTempoDiLettura(payload.getTempoDiLettura());
+        blogPost.setAutore(author);
+        
+        if (payload.getCover() != null) {
+            blogPost.setCover(payload.getCover());
+        }
+        
         return blogPostRepository.save(blogPost);
     }
 
-    // Gestisce le richieste PUT a /blogPosts/{id}
-    // Aggiorna un post esistente identificato dall'ID nel percorso
+    // Aggiorna un post esistente
     @PutMapping("/{id}")
-    public ResponseEntity<BlogPost> updatePost(@PathVariable Long id, @RequestBody BlogPost blogPost) {
-        if (!blogPostRepository.existsById(id)) { // Verifica se il post esiste
-            return ResponseEntity.notFound().build(); // Se non esiste, restituisce 404 Not Found
+    public ResponseEntity<BlogPost> updatePost(@PathVariable Long id, @RequestBody BlogPostPayload payload) {
+        BlogPost existingPost = blogPostRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Post non trovato con id: " + id));
+        
+        Author author = authorRepository.findById(payload.getAutoreId())
+                .orElseThrow(() -> new NotFoundException("Autore non trovato con id: " + payload.getAutoreId()));
+        
+        existingPost.setCategoria(payload.getCategoria());
+        existingPost.setTitolo(payload.getTitolo());
+        existingPost.setContenuto(payload.getContenuto());
+        existingPost.setTempoDiLettura(payload.getTempoDiLettura());
+        existingPost.setAutore(author);
+        
+        if (payload.getCover() != null) {
+            existingPost.setCover(payload.getCover());
         }
-        blogPost.setId(id); // Imposta l'ID del post da aggiornare
-        return ResponseEntity.ok(blogPostRepository.save(blogPost)); // Salva e restituisce il post aggiornato
+        
+        return ResponseEntity.ok(blogPostRepository.save(existingPost));
     }
 
-    // Gestisce le richieste DELETE a /blogPosts/{id}
-    // Elimina un post esistente identificato dall'ID nel percorso
+    // Elimina un post
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable Long id) {
-        if (!blogPostRepository.existsById(id)) { // Verifica se il post esiste
-            return ResponseEntity.notFound().build(); // Se non esiste, restituisce 404 Not Found
+        if (!blogPostRepository.existsById(id)) {
+            throw new NotFoundException("Post non trovato con id: " + id);
         }
-        blogPostRepository.deleteById(id); // Elimina il post dal database
-        return ResponseEntity.ok().build(); // Restituisce 200 OK
+        blogPostRepository.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 } 

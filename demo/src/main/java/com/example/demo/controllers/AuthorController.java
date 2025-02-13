@@ -33,6 +33,10 @@ public class AuthorController {
     // Gestisce le richieste POST a /authors per creare un nuovo autore
     @PostMapping
     public Author createAuthor(@RequestBody Author author) {
+        // Verifica che i campi obbligatori non siano null
+        if (author.getNome() == null || author.getCognome() == null || author.getEmail() == null) {
+            throw new IllegalArgumentException("Nome, cognome e email sono obbligatori");
+        }
         return authorRepository.save(author); // Salva il nuovo autore nel database
     }
 
